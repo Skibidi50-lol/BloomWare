@@ -1,9 +1,7 @@
 getgenv().GunMods = {
-    Enabled = false,
-    
-    InfiniteAmmo = true,
+    InfiniteAmmo = false,
     NoSpread = false,
-    NoRecoil = false,
+    NoRecoil = false,          -- Camera spin FIXED
     FastFireRate = false,
     Auto = false
 }
@@ -19,67 +17,36 @@ end
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
--- Weapon cache for original values
+-- Weapon cache
 local weaponCache = {}
 
 local function cacheWeaponValues(weapon)
-    if not weaponCache[weapon] then
-        weaponCache[weapon] = {}
-        
-        -- Ammo
-        if weapon:FindFirstChild("Ammo") then
-            weaponCache[weapon].Ammo = weapon.Ammo.Value
-        end
-        if weapon:FindFirstChild("StoredAmmo") then
-            weaponCache[weapon].StoredAmmo = weapon.StoredAmmo.Value
-        end
-        
-        -- Spread
-        if weapon:FindFirstChild("Spread") then
-            weaponCache[weapon].Spread = weapon.Spread.Value or weapon.Spread
-        end
-        if weapon:FindFirstChild("MaxSpread") then
-            weaponCache[weapon].MaxSpread = weapon.MaxSpread.Value or weapon.MaxSpread
-        end
-        
-        -- **RECOIL FIX** - Key properties that cause camera spin
-        if weapon:FindFirstChild("RecoilControl") then
-            weaponCache[weapon].RecoilControl = weapon.RecoilControl.Value or weapon.RecoilControl
-        end
-        if weapon:FindFirstChild("Recoil") then
-            weaponCache[weapon].Recoil = weapon.Recoil.Value or weapon.Recoil
-        end
-        if weapon:FindFirstChild("RecoilAmount") then
-            weaponCache[weapon].RecoilAmount = weapon.RecoilAmount.Value or weapon.RecoilAmount
-        end
-        
-        -- Fire Rate
-        if weapon:FindFirstChild("FireRate") then
-            weaponCache[weapon].FireRate = weapon.FireRate.Value or weapon.FireRate
-        end
-        if weapon:FindFirstChild("BFireRate") then
-            weaponCache[weapon].BFireRate = weapon.BFireRate.Value or weapon.BFireRate
-        end
-        
-        -- Auto
-        if weapon:FindFirstChild("Auto") then
-            weaponCache[weapon].Auto = weapon.Auto.Value or weapon.Auto
+    if weaponCache[weapon] then return end
+    weaponCache[weapon] = {}
+
+    local function cache(name)
+        local obj = weapon:FindFirstChild(name)
+        if obj then
+            weaponCache[weapon][name] = obj:IsA("ValueBase") and obj.Value or obj
         end
     end
+
+    cache("Ammo"); cache("StoredAmmo")
+    cache("Spread"); cache("MaxSpread")
+    cache("RecoilControl"); cache("Recoil"); cache("RecoilAmount")
+    cache("FireRate"); cache("BFireRate")
+    cache("Auto")
 end
 
--- Main gun modification loop
+-- Main loop - ALWAYS RUNS
 RunService.Heartbeat:Connect(function()
-    if not getgenv().GunMods.Enabled then return end
-
     pcall(function()
         local weapons = ReplicatedStorage:WaitForChild("Weapons"):GetChildren()
         
         for _, weapon in ipairs(weapons) do
             cacheWeaponValues(weapon)
-            local cached = weaponCache[weapon]
-            
-            -- 🌟 Infinite Ammo
+
+            -- Infinite Ammo
             if getgenv().GunMods.InfiniteAmmo then
                 if weapon:FindFirstChild("Ammo") then
                     weapon.Ammo.Value = 300
@@ -88,60 +55,38 @@ RunService.Heartbeat:Connect(function()
                     weapon.StoredAmmo.Value = 300
                 end
             end
-            
-            -- 🎯 No Spread
+
+            -- No Spread
             if getgenv().GunMods.NoSpread then
-                if weapon:FindFirstChild("Spread") then
-                    weapon.Spread.Value = 0
-                    weapon.Spread = 0
-                end
-                if weapon:FindFirstChild("MaxSpread") then
-                    weapon.MaxSpread.Value = 0
-                    weapon.MaxSpread = 0
-                end
+                local spread = weapon:FindFirstChild("Spread")
+                local maxspread = weapon:FindFirstChild("MaxSpread")
+                if spread then spread.Value = 0; spread = 0 end
+                if maxspread then maxspread.Value = 0; maxspread = 0 end
             end
-            
-            -- 🔫 **NO CAMERA SPIN/ROTATION FIX**
+
+            -- No Recoil (Camera Spin FIXED)
             if getgenv().GunMods.NoRecoil then
-                -- Arsenal/CounterBlox: High RecoilControl = less recoil
-                if weapon:FindFirstChild("RecoilControl") then
-                    weapon.RecoilControl.Value = math.huge  -- or 999 (was 300 - too low)
-                    weapon.RecoilControl = math.huge
-                end
-                
-                -- Other games: Set recoil to 0
-                if weapon:FindFirstChild("Recoil") then
-                    weapon.Recoil.Value = 0
-                    weapon.Recoil = 0
-                end
-                if weapon:FindFirstChild("RecoilAmount") then
-                    weapon.RecoilAmount.Value = 0
-                    weapon.RecoilAmount = 0
-                end
+                local rc = weapon:FindFirstChild("RecoilControl")
+                local r = weapon:FindFirstChild("Recoil")
+                local ra = weapon:FindFirstChild("RecoilAmount")
+                if rc then rc.Value = math.huge; rc = math.huge end
+                if r then r.Value = 0; r = 0 end
+                if ra then ra.Value = 0; ra = 0 end
             end
-            
-            -- ⚡ Fast Fire Rate
+
+            -- Fast Fire Rate
             if getgenv().GunMods.FastFireRate then
-                if weapon:FindFirstChild("FireRate") then
-                    weapon.FireRate.Value = 0.003
-                    weapon.FireRate = 0.003
-                end
-                if weapon:FindFirstChild("BFireRate") then
-                    weapon.BFireRate.Value = 0.003
-                    weapon.BFireRate = 0.003
-                end
+                local fr = weapon:FindFirstChild("FireRate")
+                local bfr = weapon:FindFirstChild("BFireRate")
+                if fr then fr.Value = 0.003; fr = 0.003 end
+                if bfr then bfr.Value = 0.003; bfr = 0.003 end
             end
-            
-            -- 🔄 Auto Fire
+
+            -- Auto Fire
             if getgenv().GunMods.Auto then
-                if weapon:FindFirstChild("Auto") then
-                    weapon.Auto.Value = true
-                    weapon.Auto = true
-                end
+                local auto = weapon:FindFirstChild("Auto")
+                if auto then auto.Value = true; auto = true end
             end
         end
     end)
 end)
-
-print("🚀 True Gun Mode LOADED - FIXED: No Camera Spin!")
-print("Use getgenv().GunMods.NoRecoil = false to test original recoil")
