@@ -1,7 +1,7 @@
 getgenv().GunMods = {
     InfiniteAmmo = false,
     NoSpread = false,
-    NoRecoil = false,          -- Camera spin FIXED
+    NoRecoil = false,-- Camera spin FIXED
     FastFireRate = false,
     Auto = false
 }
@@ -38,7 +38,7 @@ local function cacheWeaponValues(weapon)
     cache("Auto")
 end
 
--- Main loop - ALWAYS RUNS
+-- Main loop
 RunService.Heartbeat:Connect(function()
     pcall(function()
         local weapons = ReplicatedStorage:WaitForChild("Weapons"):GetChildren()
