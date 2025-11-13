@@ -1,7 +1,6 @@
 getgenv().Misc = {
   Bhop = false,
-  InstantRespawn = false,
-  ThirdPerson = false
+  InstantRespawn = false
 }
 
 spawn(function()
@@ -20,9 +19,3 @@ spawn(function()
         end
     end
 end)
-
-if getgenv().Misc.ThirdPerson then
-    game:GetService("Players")["LocalPlayer"].PlayerGui.GUI.Client.Variables.thirdperson.Value = true
-  else
-    game:GetService("Players")["LocalPlayer"].PlayerGui.GUI.Client.Variables.thirdperson.Value = false
-end
