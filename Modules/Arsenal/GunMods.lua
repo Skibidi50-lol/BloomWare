@@ -49,10 +49,10 @@ RunService.Heartbeat:Connect(function()
             -- Infinite Ammo
             if getgenv().GunMods.InfiniteAmmo then
                 if weapon:FindFirstChild("Ammo") then
-                    weapon.Ammo.Value = 900
+                    weapon.Ammo.Value = 300
                 end
                 if weapon:FindFirstChild("StoredAmmo") then
-                    weapon.StoredAmmo.Value = 900
+                    weapon.StoredAmmo.Value = 300
                 end
             end
 
