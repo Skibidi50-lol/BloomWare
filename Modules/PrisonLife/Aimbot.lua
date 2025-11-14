@@ -61,39 +61,51 @@ local function IsAlive(Player)
     return Player.Character and Player.Character:FindFirstChild("Humanoid") and Player.Character.Humanoid.Health > 0
 end
 
-local function GetClosestPlayer()
-    local ClosestDistance = getgenv().Aimbot.FOVSettings.Radius
-    local ClosestPlayer = nil
+local function GetClosest()
+    local Closest = nil
+    local ClosestDist = getgenv().Aimbot.FOVSettings.Radius
 
     for _, Player in ipairs(Players:GetPlayers()) do
-        if Player ~= LocalPlayer and IsAlive(Player) and not IsTeamMate(Player) then
-            local Character = Player.Character
-            local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-            local LockPart = Character and Character:FindFirstChild(getgenv().Aimbot.Settings.LockPart)
+        if Player == LocalPlayer then continue end
+        if not Player.Character or not Player.Character:FindFirstChild("Humanoid") then continue end
+        if Player.Character.Humanoid.Health <= 0 then continue end
+        
+        -- Team Check
+        if getgenv().Aimbot.Settings.TeamCheck and (Player.Team == LocalPlayer.Team or Player.TeamColor == LocalPlayer.TeamColor) then continue end
 
-            if HumanoidRootPart and LockPart then
-                local ScreenPos, OnScreen = Camera:WorldToViewportPoint(LockPart.Position)
-                if OnScreen then
-                    local Distance = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(ScreenPos.X, ScreenPos.Y)).Magnitude
+        local Part = Player.Character:FindFirstChild(getgenv().Aimbot.Settings.LockPart)
+        if not Part then continue end
 
-                    if Distance < ClosestDistance then
-                        if getgenv().Aimbot.Settings.WallCheck then
-                            local Ray = Ray.new(Camera.CFrame.Position, (LockPart.Position - Camera.CFrame.Position).Unit * 500)
-                            local Hit = Workspace:FindPartOnRayWithIgnoreList(Ray, {LocalPlayer.Character, Character})
-                            if not Hit then
-                                ClosestDistance = Distance
-                                ClosestPlayer = LockPart
-                            end
-                        else
-                            ClosestDistance = Distance
-                            ClosestPlayer = LockPart
-                        end
+        local ScreenPos, OnScreen = Camera:WorldToViewportPoint(Part.Position)
+        if OnScreen then
+            local MousePos = Vector2.new(Mouse.X, Mouse.Y + 36)
+            local Dist = (MousePos - Vector2.new(ScreenPos.X, ScreenPos.Y)).Magnitude
+            
+            if Dist < ClosestDist then
+                local WallCheckPassed = true
+                
+                -- FIXED WALL CHECK - Only blocks if something OTHER than target blocks ray
+                if getgenv().Aimbot.Settings.WallCheck then
+                    local Direction = (Part.Position - Camera.CFrame.Position)
+                    local RaycastParams = RaycastParams.new()
+                    RaycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+                    RaycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+                    
+                    local RaycastResult = workspace:Raycast(Camera.CFrame.Position, Direction.Unit * Direction.Magnitude, RaycastParams)
+                    
+                    if RaycastResult then
+                        WallCheckPassed = RaycastResult.Instance:IsDescendantOf(Player.Character)
                     end
+                end
+                
+                if WallCheckPassed then
+                    Closest = Part
+                    ClosestDist = Dist
                 end
             end
         end
     end
-    return ClosestPlayer
+    return Closest
 end
 
 -- // FOV Circle Update
