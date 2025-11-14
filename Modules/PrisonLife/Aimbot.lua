@@ -130,31 +130,33 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- // Main Aimbot Loop
-RunService[getgenv().Aimbot.DeveloperSettings.UpdateMode]:Connect(function()
-    if not getgenv().Aimbot.Settings.Enabled then return end
+RunService.RenderStepped:Connect(function()
+    if not (getgenv().Aimbot.Settings.Enabled and HoldingAimKey) then 
+        Target = nil 
+        return 
+    end
 
-    Target = GetClosestPlayer()
+    Target = GetClosest()  -- Now with FIXED wall check!
 
     if Target then
-        local TargetPos = Target.Position
-        if getgenv().Aimbot.Settings.OffsetToMoveDirection and Target.Parent:FindFirstChild("Humanoid") then
+        local PredictedPos = Target.Position
+        
+        -- Prediction
+        if getgenv().Aimbot.Settings.OffsetToMoveDirection and Target.Parent:FindFirstChild("HumanoidRootPart") then
             local Velocity = Target.Parent.HumanoidRootPart.Velocity
-            TargetPos = TargetPos + (Velocity * (getgenv().Aimbot.Settings.OffsetIncrement / 100))
+            local MoveDirection = Velocity.Unit
+            PredictedPos = PredictedPos + (MoveDirection * getgenv().Aimbot.Settings.OffsetIncrement)
         end
 
-        local WorldPoint = TargetPos
-        local ScreenPoint, OnScreen = Camera:WorldToViewportPoint(WorldPoint)
-
-        if OnScreen then
-            if getgenv().Aimbot.Settings.LockMode == 1 then -- Smooth CFrame
-                local MousePos = UserInputService:GetMouseLocation()
-                local TargetVector = Camera:WorldToViewportPoint(WorldPoint)
-                local NewCameraCFrame = CFrame.new(Camera.CFrame.Position, WorldPoint)
-                Camera.CFrame = Camera.CFrame:Lerp(NewCameraCFrame, getgenv().Aimbot.Settings.Sensitivity)
-            elseif getgenv().Aimbot.Settings.LockMode == 2 then -- mousemoverel
-                local Move = Vector2.new((ScreenPoint.X - Mouse.X) / getgenv().Aimbot.Settings.Sensitivity2, (ScreenPoint.Y - Mouse.Y - 36) / getgenv().Aimbot.Settings.Sensitivity2)
-                mousemoverel(Move.X, Move.Y)
-            end
+        -- Aiming Modes
+        if getgenv().Aimbot.Settings.LockMode == 1 then  -- Smooth Camera
+            local NewCFrame = CFrame.new(Camera.CFrame.Position, PredictedPos)
+            Camera.CFrame = Camera.CFrame:Lerp(NewCFrame, getgenv().Aimbot.Settings.Sensitivity + 0.1)  -- +0.1 for responsiveness
+        else  -- MouseMoveRel
+            local ScreenPos = Camera:WorldToViewportPoint(PredictedPos)
+            local DeltaX = (ScreenPos.X - Mouse.X) * 0.2
+            local DeltaY = (ScreenPos.Y - (Mouse.Y + 36)) * 0.2
+            mousemoverel(DeltaX / getgenv().Aimbot.Settings.Sensitivity2, DeltaY / getgenv().Aimbot.Settings.Sensitivity2)
         end
     end
 end)
